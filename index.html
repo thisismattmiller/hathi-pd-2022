@@ -1,0 +1,218 @@
+<html>
+<head>
+</head>
+<body>
+	
+
+<style>
+
+  body{
+    font-family: sans-serif;
+    padding-bottom: 5em;
+  }
+
+.chart{
+	width: 100%; margin: auto;
+
+}
+th{
+  text-align: left;
+}
+
+@media (min-width:1025px)  { 
+
+	.chart{
+		width: 75%;
+	}
+}
+
+tr:nth-child(even){
+   background-color:whitesmoke;
+}
+
+tr:hover{
+   background-color:lightblue;
+}
+
+a{
+  color: black !important;
+}
+.currentPage{
+
+    margin-right: 1em;
+}
+#pages{
+  margin-bottom: 1.5em;
+        font-size: 1.25em;
+}
+
+#pages a{
+  padding-right: 0.5em;
+}
+</style>
+
+<div class="chart">
+  <h1>Hathi Trust 1926 Public Domain</h1>
+  <p>This icicle chart shows 54,000 1926 published works found in Hathi Trust that they indicate will enter the public domain in January 2022. They are organized by their Library of Congress Classification. Click to view the nested topics in the hierarchy that flow left to right. When you select a topic it will load a list of those specific titles in a table below the visualization.
+  </p>
+
+  <p>
+  Code and data: <a href="https://github.com/thisismattmiller/hathi-pd-2022">Here</a><br>
+  Orginal source data: <a href="https://twitter.com/hathitrust/status/1473731221855383561">Hathi tweet</a><br>
+  By <a href="https://thisismattmiller.com">Matt Miller</a></p>
+</div>
+
+
+<div id="chart" class="chart" style=""></div>
+
+<div class="chart">
+  <h2 id="subjects"></h2>
+  <div id="pages">
+    
+    Click a catagory above to load those titles here.
+
+  </div>
+  <div style="font-weight: bold; color: mediumvioletred; font-size:1.1em; margin-bottom:1em;">When you click through to the Hathi record, if it says "Limited View" it should still be viewable (button labels are slowly updating as of 1/1/2022)</div>
+  <table>
+      <thead>
+          <tr>
+              <th>Title</th>
+              <th>Author</th>
+              <th></th>
+          </tr>
+      </thead>
+      <tbody id="list">
+
+      </tbody>
+  </table>
+
+</div>
+
+
+
+<script type="module">
+import {Runtime, Inspector} from "https://cdn.jsdelivr.net/npm/@observablehq/runtime@4/dist/runtime.js";
+import define from "https://api.observablehq.com/@thisismattmiller/hathi-1926-2022-icicle.js?v=3";
+new Runtime().module(define, name => {
+  if (name === "chart") return new Inspector(document.querySelector("#chart"));
+});
+</script>
+
+
+
+<script>
+  
+
+let metadata = null
+
+
+fetch('hash_metadata.json')
+  .then(response => response.json())
+  .then(data => metadata = data);
+
+
+window.loadPageData = function(data,page){
+
+
+  if (!page){
+    page=1
+  }
+
+  // load the metadata page
+  
+  fetch(`hashdata/${data.hash}_${page}.json`)
+    .then(response => response.json())
+    .then((volumes) =>{
+
+      console.log(volumes)
+
+
+      
+      document.getElementById('pages').innerHTML = ""
+
+      console.log(metadata[data.hash])
+      if (metadata[data.hash].pages>1){
+
+        document.getElementById('pages').innerHTML = "<span class=\"currentPage\">Page #" + page + "</span>Pages: ";
+
+
+        [...Array(metadata[data.hash].pages)].forEach((_, i) => {
+          
+          let p = document.createElement('a')
+
+          p.dataset.page = i
+          p.dataset.hash = data.hash
+
+          p.setAttribute('href','#')
+          p.classList.add('pageLink')
+          p.innerHTML=i+1
+
+          p.addEventListener('click',(event)=>{
+
+
+            window.loadPageData({hash:event.target.dataset.hash},parseInt(event.target.dataset.page)+1)
+            event.preventDefault()
+            return false
+          })
+
+          document.getElementById('pages').appendChild(p)
+
+          
+        });
+
+
+
+      }
+
+
+
+
+      document.getElementById('subjects').innerHTML = metadata[data.hash].subject.join(" -> ")
+      document.getElementById('list').innerHTML = ""
+      volumes.forEach((d)=>{
+
+        let tr = document.createElement('tr')
+
+        tr.innerHTML = `<td>${d.title}</td><td>${d.author}</td><td><a target="_blank" href="https://catalog.hathitrust.org/Record/${d.id}">View</a></td>`
+        document.getElementById('list').appendChild(tr)
+      })
+
+
+
+
+    });
+
+
+}
+
+
+
+
+// fetch('hash_data.json')
+//   .then(response => response.json())
+//   .then(data => window.data = data);
+
+//   window.loadPageData = function(data){
+//     console.log(data,'xxxx')
+//     console.log(window.data[data.hash])
+
+//     document.getElementById('subjects').innerHTML = window.data[data.hash].subject.join(" -> ")
+//     document.getElementById('list').innerHTML = ""
+//     window.data[data.hash].volumes.forEach((d)=>{
+
+//       let tr = document.createElement('tr')
+
+//       tr.innerHTML = `<td>${d.title}</td><td>${d.author}</td><td><a target="_blank" href="https://hdl.handle.net/2027/${d.id}">View</a></td>`
+//       document.getElementById('list').appendChild(tr)
+//     })
+
+//   }
+
+
+
+</script>
+
+</body>
+
+
+</html>
